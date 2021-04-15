@@ -1,0 +1,13 @@
+- hosts: all
+  remote_user: ec2-user
+  become: yes
+  tasks:
+      - name: install mutiple package unzip,php,ipl
+        yum:
+          name: "{{ item }}"
+          state: present
+        loop:
+          - unzip
+          - php
+          - ipl
+

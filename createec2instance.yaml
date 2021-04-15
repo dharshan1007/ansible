@@ -1,0 +1,13 @@
+- hosts: localhost
+  remote_user: ec2-user
+  become: yes
+  tasks:
+      - name: create ec2install
+        amazon.aws.ec2:
+            key_name: key0403
+            instance_type: t2.micro
+            region: "ap-south-1"
+            image: ami-0bcf5425cdc1d8a85 
+            count: 1
+            vpc_subnet_id: subnet-8190dbcd
+            assign_public_ip: yes
