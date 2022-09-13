@@ -1,0 +1,52 @@
+node{
+    stage('git checkout')
+    {
+    git 'https://github.com/dharshan1007/myproject.git'
+    }
+    stage('compile package')
+    {
+        def mvnHome=tool name: 'maven3', type: 'maven'
+        sh "${mvnHome}/bin/mvn clean package"
+        sh 'mv target/myweb*.war target/newapp.war'
+    }
+    stage('build docker image')
+    {
+        sh 'docker build -t dharshan1007/myweb:0.0.2 .'
+    }
+    stage('docker push image to dockerhub')
+    {
+         withCredentials([string(credentialsId: 'dockerPass', variable: 'dockerPassword')]) {
+             sh "docker login -u dharshan1007 -p ${dockerPassword}"
+             }
+       sh 'docker push dharshan1007/myweb:0.0.2'
+       
+    }
+    stage('Remove previous container')
+    {
+        try{
+           sh 'docker rm -f tomcattest'
+        }
+           catch(error){
+                          //nothing to do
+           }
+           stage('deployment into docker agent')
+           {
+               
+        
+               def dockerRun = 'docker run -d --name container1 -p 9000:8080 dharshan1007/myweb:0.0.2'
+               sshagent(['deploy-dev']) {
+                  try{     
+                     sh 'ssh -o StrictHostKeyChecking=no ec2-user@172.31.6.114 docker rm -f container1'
+                  }
+                     
+                                       catch(error){
+                                                      //nothing to do
+                                       }
+                                        sh "ssh -o StrictHostKeyChecking=no ec2-user@172.31.6.114 ${dockerRun}"
+                                        }
+                                   
+            }
+    }
+}
+
+
